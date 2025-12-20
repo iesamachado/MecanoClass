@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Alumno - MecanoClass</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-transparent py-3">
+        <div class="container">
+            <a class="navbar-brand title-gradient" href="index.html">MecanoClass Alumno</a>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Header Stats (Last 10 avg) -->
+                <div id="headerStats"
+                    class="d-none d-md-flex align-items-center gap-3 me-2 border-end border-secondary pe-3">
+                    <span title="PPM (Últimos 10)"><i class="bi bi-speedometer2 text-primary me-1"></i> <span
+                            id="headerWpm" class="text-light fw-bold">--</span> <small class="text-dim">
+                            PPM</small></span>
+                    <span title="Precisión (Últimos 10)"><i class="bi bi-bullseye text-info me-1"></i> <span
+                            id="headerAcc" class="text-light fw-bold">--</span> <small class="text-dim">%</small></span>
+                </div>
+
+                <div class="d-flex align-items-center">
+                    <a href="profile.html" class="text-decoration-none d-flex align-items-center" title="Editar Perfil">
+                        <img id="userAvatar" src="" class="rounded-circle border border-white hover-scale"
+                            style="width: 40px; height: 40px; display: none; transition: transform 0.2s;">
+                        <span id="userName" class="text-light ms-2 fw-bold hover-text-primary">Cargando...</span>
+                    </a>
+                </div>
+                <button onclick="logout()" class="btn btn-outline-danger btn-sm"><i
+                        class="bi bi-box-arrow-right"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8 glass-panel p-5 text-center">
+                <img id="bigAvatar" src="" class="rounded-circle mb-3 border border-2 border-primary"
+                    style="width: 100px; height: 100px;">
+                <h2 id="welcomeText" class="text-light mb-4">¡Hola, Teclador!</h2>
+
+                <div class="d-flex justify-content-center gap-3 mb-4">
+                    <a href="practice.html" class="btn btn-premium px-5"><i class="bi bi-keyboard me-2"></i>Practicar
+                        Ahora</a>
+                    <a href="live_player.html" class="btn btn-outline-light px-5"><i
+                            class="bi bi-controller me-2"></i>Unirse a Partida</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="glass-panel p-4 h-100">
+                    <h4 class="text-light mb-3"><i class="bi bi-person-plus me-2 text-success"></i>Unirse a una Clase
+                    </h4>
+                    <p class="text-dim">Introduce el PIN que te ha dado tu profesor.</p>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-dark border-secondary text-light">PIN</span>
+                        <input type="text" id="classPinInput" class="form-control form-control-premium"
+                            placeholder="123456" maxlength="6">
+                        <button onclick="handleJoinClass()" class="btn btn-success">Unirse</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="glass-panel p-4 h-100">
+                    <h4 class="text-light mb-3"><i class="bi bi-trophy me-2 text-warning"></i>Mis Estadísticas</h4>
+                    <div class="row text-center mt-4">
+                        <div class="col-6">
+                            <h2 class="text-primary fw-bold" id="avgWpm">--</h2>
+                            <p class="text-dim small">PPM Promedio</p>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="text-info fw-bold" id="avgAcc">--%</h2>
+                            <p class="text-dim small">Precisión Promedio</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Classes -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="glass-panel p-4">
+                    <h4 class="text-light mb-4"><i class="bi bi-collection me-2 text-info"></i>Mis Clases</h4>
+                    <div id="myClassesList" class="row g-3">
+                        <div class="col-12 text-center text-dim py-3">Cargando tus clases...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Daily Ranking -->
+        <div class="row">
+            <div class="col-12">
+                <div class="glass-panel p-4">
+                    <h4 class="text-light mb-3"><i class="bi bi-stars me-2 text-primary"></i>Mejores del Día</h4>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 bg-transparent">
+                            <thead>
+                                <tr>
+                                    <th class="bg-transparent border-secondary text-dim text-center"
+                                        style="width: 60px;">#</th>
+                                    <th class="bg-transparent border-secondary text-dim">Nombre</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">PPM</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">Precisión</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dailyRankingBody">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-dim">Cargando ranking...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase & Logic -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard_student.js"></script>
+</body>
+
+</html>

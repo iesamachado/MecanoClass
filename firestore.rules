@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isTeacher() {
+      // In a real secure app, we'd check the user doc, but that costs a read.
+      // For now we rely on the client-side role or assume teachers create classes under their UID.
+      // Alternatively, we can check resource.data.role if we were strict.
+      return isAuthenticated(); 
+    }
+
+    // --- Users Collection ---
+    // Public read (for avatars/names in leaderboards), Write own only
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+    }
+
+    // --- Classes Collection ---
+    // Read: Authenticated (to join or view). Write: Teachers.
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Ideally restrict to teachers
+      allow update, delete: if resource.data.teacherId == request.auth.uid;
+    }
+
+    // --- Class Members Collection ---
+    match /class_members/{memberId} {
+      allow read: if isAuthenticated();
+      // Students can join (create), Teachers can remove?
+      allow create: if isAuthenticated() && request.resource.data.studentId == request.auth.uid;
+    }
+
+    // --- Results Collection ---
+    match /results/{resultId} {
+      // Students read own, Teachers read class results
+      allow read: if isAuthenticated(); 
+      // Students save own results
+      allow create: if isAuthenticated() && request.resource.data.studentId == request.auth.uid;
+    }
+
+    // --- Live Sessions (Game) ---
+    match /live_sessions/{pin} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Hosts
+      allow update: if resource.data.hostId == request.auth.uid; // Only host controls game state
+    }
+
+    match /live_participants/{participantId} {
+      allow read: if isAuthenticated();
+      // Students join and update their progress
+      allow create: if isAuthenticated();
+      allow update: if resource.data.studentId == request.auth.uid;
+    }
+
+    // --- Practice Texts ---
+    match /practice_texts/{textId} {
+      allow read: if true;
+      // Allow any auth user to seed (create) if it doesn't exist? 
+      // Simplified: Allow create for all authenticated users to enable client-side seeding on first run.
+      // In a strict env, this would be admin only.
+      allow create: if isAuthenticated();
+    }
+  }
+}

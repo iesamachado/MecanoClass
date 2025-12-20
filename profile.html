@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Perfil - MecanoClass</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="css/styles.css" rel="stylesheet">
+    <style>
+        .avatar-preview {
+            width: 250px;
+            height: 250px;
+            background-color: #b6e3f4;
+            /* DiceBear default bg match */
+            border-radius: 50%;
+            border: 4px solid var(--primary-color);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .option-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .option-group label {
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-transparent py-3">
+        <div class="container">
+            <a class="navbar-brand title-gradient" href="index.html">MecanoClass Perfil</a>
+            <button onclick="window.history.back()" class="btn btn-outline-light btn-sm"><i
+                    class="bi bi-arrow-left me-2"></i>Volver</button>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row g-5">
+            <!-- Left: Preview & Actions -->
+            <div class="col-lg-4 text-center">
+                <div class="glass-panel p-5 sticky-top" style="top: 2rem;">
+                    <h3 class="text-light mb-4">Tu Avatar</h3>
+                    <div class="avatar-preview mb-4 shadow-lg">
+                        <img id="avatarBig" src="" alt="Avatar Preview">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-dim text-start w-100">Nombre Visible</label>
+                        <input type="text" id="displayNameInput"
+                            class="form-control form-control-premium text-center fw-bold text-light" value="">
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <button onclick="saveProfile()" class="btn btn-premium btn-lg"><i
+                                class="bi bi-save me-2"></i>Guardar Cambios</button>
+                        <button onclick="randomizeAvatar()" class="btn btn-outline-light"><i
+                                class="bi bi-dice-5 me-2"></i>Aleatorio</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Customization Controls -->
+            <div class="col-lg-8">
+                <div class="glass-panel p-5">
+                    <h3 class="text-light mb-4 border-bottom border-secondary pb-3">Personalización</h3>
+
+                    <div class="row">
+                        <!-- Piel & Pelo -->
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">Rasgos</h5>
+
+                            <div class="option-group">
+                                <label>Color de Piel</label>
+                                <select id="skinColor" class="form-select bg-dark text-light border-secondary"
+                                    onchange="updateAvatar()">
+                                    <option value="f8d25c">Amarillo</option>
+                                    <option value="ffdbb4">Claro</option>
+                                    <option value="edb98a">Bronceado</option>
+                                    <option value="d08b5b">Moreno</option>
+                                    <option value="ae5d29">Oscuro</option>
+                                    <option value="614335">Muy Oscuro</option>
+                                </select>
+                            </div>
+
+                            <div class="option-group">
+                                <div class="option-group">
+                                    <label>Estilo de Pelo / Gorro</label>
+                                    <select id="topType" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="noHair">Calvo</option>
+                                        <option value="hat">Sombrero</option>
+                                        <option value="hijab">Hijab</option>
+                                        <option value="turban">Turbante</option>
+                                        <option value="winterHat1">Gorro Invierno 1</option>
+                                        <option value="winterHat02">Gorro Invierno 2</option>
+                                        <option value="winterHat03">Gorro Invierno 3</option>
+                                        <option value="winterHat04">Gorro Invierno 4</option>
+                                        <option value="bigHair">Largo Ondulado</option>
+                                        <option value="bob">Largo Bob</option>
+                                        <option value="bun">Moño</option>
+                                        <option value="curly">Largo Rizado</option>
+                                        <option value="curvy">Largo Curvo</option>
+                                        <option value="dreads">Largo Rastas</option>
+                                        <option value="frida">Frida</option>
+                                        <option value="fro">Afro Largo</option>
+                                        <option value="froBand">Afro con Banda</option>
+                                        <option value="longButNotTooLong">Media Melena</option>
+                                        <option value="shavedSides">Rapado Lados</option>
+                                        <option value="miaWallace">Mia Wallace</option>
+                                        <option value="straight01">Largo Liso 1</option>
+                                        <option value="straight02">Largo Liso 2</option>
+                                        <option value="straightAndStrand">Largo con Mechón</option>
+                                        <option value="dreads01">Corto Rastas 1</option>
+                                        <option value="dreads02">Corto Rastas 2</option>
+                                        <option value="frizzle">Corto Rizado</option>
+                                        <option value="shaggyMullet">Mullet</option>
+                                        <option value="shortCurly">Corto Rizado Fino</option>
+                                        <option value="shortFlat">Corto Plano</option>
+                                        <option value="shortRound">Corto Redondo</option>
+                                        <option value="shortWaved">Corto Ondulado</option>
+                                        <option value="sides">Lados Cortos</option>
+                                        <option value="theCaesar">Caesar</option>
+                                        <option value="theCaesarAndSidePart">Caesar de Lado</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Color de Pelo</label>
+                                    <select id="hairColor" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="2c1b18">Negro</option>
+                                        <option value="4a312c">Castaño Oscuro</option>
+                                        <option value="724133">Castaño</option>
+                                        <option value="a55728">Pelirrojo Oscuro</option>
+                                        <option value="b58143">Rubio Oscuro</option>
+                                        <option value="d6b370">Rubio</option>
+                                        <option value="f59797">Rosa</option>
+                                        <option value="ecdcbf">Platino</option>
+                                        <option value="c93305">Naranja</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Vello Facial</label>
+                                    <select id="facialHairType" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="Blank">Ninguno</option>
+                                        <option value="beardMedium">Barba Media</option>
+                                        <option value="beardLight">Barba Ligera</option>
+                                        <option value="beardMajestic">Majestuosa</option>
+                                        <option value="moustacheFancy">Bigote Elegante</option>
+                                        <option value="moustacheMagnum">Bigote Magnum</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Ropa y Accesorios -->
+                            <div class="col-md-6">
+                                <h5 class="text-info mb-3">Estilo</h5>
+
+                                <div class="option-group">
+                                    <label>Ropa</label>
+                                    <select id="clotheType" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="blazerAndShirt">Blazer con Camisa</option>
+                                        <option value="blazerAndSweater">Blazer con Suéter</option>
+                                        <option value="collarAndSweater">Suéter Cuello Alto</option>
+                                        <option value="graphicShirt">Camiseta Gráfica</option>
+                                        <option value="hoodie">Sudadera con Capucha</option>
+                                        <option value="overall">Peto</option>
+                                        <option value="shirtCrewNeck">Camiseta Cuello Redondo</option>
+                                        <option value="shirtScoopNeck">Camiseta Cuello Barco</option>
+                                        <option value="shirtVNeck">Camiseta Cuello V</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Color Ropa</label>
+                                    <select id="clotheColor" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="262e33">Negro</option>
+                                        <option value="65c9ff">Azul</option>
+                                        <option value="5199e4">Azul Oscuro</option>
+                                        <option value="25557c">Azul Marino</option>
+                                        <option value="e6e6e6">Gris</option>
+                                        <option value="929598">Gris Oscuro</option>
+                                        <option value="ff5c5c">Rojo</option>
+                                        <option value="ff488e">Rosa</option>
+                                        <option value="ffafb9">Rosa Pastel</option>
+                                        <option value="ffffb1">Amarillo</option>
+                                    </select>
+                                    <small class="text-dim">*Puede no aplicar a toda la ropa</small>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Dibujo Camiseta</label>
+                                    <select id="clotheGraphicType"
+                                        class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="Blank">Ninguno</option>
+                                        <option value="bat">Murciélago</option>
+                                        <option value="bear">Oso</option>
+                                        <option value="cumbia">Cumbia</option>
+                                        <option value="deer">Ciervo</option>
+                                        <option value="diamond">Diamante</option>
+                                        <option value="hola">Hola</option>
+                                        <option value="pizza">Pizza</option>
+                                        <option value="resist">Resist</option>
+                                        <option value="skull">Calavera</option>
+                                        <option value="skullOutline">Calavera (Borde)</option>
+                                    </select>
+                                    <small class="text-dim">*Solo para 'Camiseta Gráfica'</small>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Gafas / Accesorios</label>
+                                    <select id="accessoriesType" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="Blank">Ninguno</option>
+                                        <option value="eyepatch">Parche</option>
+                                        <option value="kurt">Kurt</option>
+                                        <option value="prescription01">Gafas 1</option>
+                                        <option value="prescription02">Gafas 2</option>
+                                        <option value="round">Redondas</option>
+                                        <option value="sunglasses">Gafas de Sol</option>
+                                        <option value="wayfarers">Wayfarers</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Color Gafas/Accesorios</label>
+                                    <select id="accessoriesColor"
+                                        class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="262e33">Negro</option>
+                                        <option value="65c9ff">Azul</option>
+                                        <option value="5199e4">Azul Oscuro</option>
+                                        <option value="25557c">Azul Marino</option>
+                                        <option value="e6e6e6">Gris</option>
+                                        <option value="929598">Gris Oscuro</option>
+                                        <option value="ff5c5c">Rojo</option>
+                                        <option value="ff488e">Rosa</option>
+                                        <option value="ffafb9">Rosa Pastel</option>
+                                        <option value="ffffb1">Amarillo</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Ojos</label>
+                                    <select id="eyeType" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="happy">Felices</option>
+                                        <option value="closed">Cerrados</option>
+                                        <option value="cry">Llorando</option>
+                                        <option value="default">Normal</option>
+                                        <option value="xDizzy">Mareado</option>
+                                        <option value="eyeRoll">Ojos en Blanco</option>
+                                        <option value="hearts">Corazones</option>
+                                        <option value="side">Mirando de lado</option>
+                                        <option value="squint">Entrecerrados</option>
+                                        <option value="surprised">Sorprendido</option>
+                                        <option value="wink">Guiño</option>
+                                        <option value="winkWacky">Guiño Loco</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Boca</label>
+                                    <select id="mouthType" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="smile">Sonrisa</option>
+                                        <option value="concerned">Preocupado</option>
+                                        <option value="default">Normal</option>
+                                        <option value="disbelief">Incrédulo</option>
+                                        <option value="eating">Comiendo</option>
+                                        <option value="grimace">Mueca</option>
+                                        <option value="sad">Triste</option>
+                                        <option value="screamOpen">Grito</option>
+                                        <option value="serious">Serio</option>
+                                        <option value="tongue">Lengua</option>
+                                        <option value="twinkle">Chispa</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>Cejas</label>
+                                    <select id="eyebrowType" class="form-select bg-dark text-light border-secondary"
+                                        onchange="updateAvatar()">
+                                        <option value="default">Normal</option>
+                                        <option value="defaultNatural">Normal (Natural)</option>
+                                        <option value="angry">Enfadado</option>
+                                        <option value="angryNatural">Enfadado (Natural)</option>
+                                        <option value="flatNatural">Planas</option>
+                                        <option value="frownNatural">Fruncidas</option>
+                                        <option value="raisedExcited">Emocionado</option>
+                                        <option value="raisedExcitedNatural">Emocionado (Natural)</option>
+                                        <option value="sadConcerned">Preocupado</option>
+                                        <option value="sadConcernedNatural">Preocupado (Natural)</option>
+                                        <option value="unibrowNatural">Uniceja</option>
+                                        <option value="upDown">Arriba/Abajo</option>
+                                        <option value="upDownNatural">Arriba/Abajo (Natural)</option>
+                                    </select>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firebase & Logic -->
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+        <script src="js/firebase-config.js"></script>
+        <script src="js/db.js"></script>
+        <script src="js/auth.js"></script>
+        <script src="js/profile.js"></script>
+</body>
+
+</html>
