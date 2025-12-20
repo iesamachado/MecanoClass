@@ -122,17 +122,40 @@ async function getClassData(classId) {
 }
 
 async function getClassMembers(classId) {
-    const snapshot = await db.collection(dbCollection.CLASS_MEMBERS).where('classId', '==', classId).get();
+    const memberIds = new Set();
     const members = [];
 
-    // In production we'd use Promise.all but for simplicity/rate limits loop is okay or optimized batch fetch
+    // 1. Get members from CLASS_MEMBERS collection (students who joined via PIN)
+    const snapshot = await db.collection(dbCollection.CLASS_MEMBERS).where('classId', '==', classId).get();
+
     for (const doc of snapshot.docs) {
         const data = doc.data();
-        const userProfile = await getUserProfile(data.studentId);
-        if (userProfile) {
-            members.push({ ...userProfile, joinedAt: data.joinedAt });
+        if (!memberIds.has(data.studentId)) {
+            memberIds.add(data.studentId);
+            const userProfile = await getUserProfile(data.studentId);
+            if (userProfile) {
+                members.push({ ...userProfile, joinedAt: data.joinedAt });
+            }
         }
     }
+
+    // 2. Get members from class document members array (students imported from Classroom)
+    const classDoc = await db.collection(dbCollection.CLASSES).doc(classId).get();
+    if (classDoc.exists) {
+        const classData = classDoc.data();
+        const membersArray = classData.members || [];
+
+        for (const studentId of membersArray) {
+            if (!memberIds.has(studentId)) {
+                memberIds.add(studentId);
+                const userProfile = await getUserProfile(studentId);
+                if (userProfile) {
+                    members.push({ ...userProfile, joinedAt: null }); // No joinedAt for imported students
+                }
+            }
+        }
+    }
+
     return members;
 }
 

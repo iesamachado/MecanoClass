@@ -21,7 +21,12 @@
                     <h2 class="text-light fw-bold mb-0" id="className">Cargando...</h2>
                     <span class="text-dim">PIN: <span id="classPin" class="text-white fw-bold">...</span></span>
                 </div>
-                <!-- <button class="btn btn-premium"><i class="bi bi-download me-2"></i>Exportar CSV</button> -->
+                <div>
+                    <button id="syncStudentsBtn" class="btn btn-info btn-sm" onclick="syncClassroomStudents()"
+                        title="Sincronizar estudiantes de Classroom" style="display: none;">
+                        <i class="bi bi-arrow-repeat me-2"></i>Sincronizar Estudiantes
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -92,6 +97,26 @@
                         resultados (PPM y Precisión).</p>
                     <div id="classroomAssignmentsList" class="list-group list-group-flush bg-transparent">
                         <!-- Loaded via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Local Assignments Section (Always visible) -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <div class="glass-panel p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="text-light mb-0"><i class="bi bi-clipboard-check me-2 text-info"></i>Tareas de Clase
+                        </h4>
+                        <button class="btn btn-info btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#createLocalAssignmentModal">
+                            <i class="bi bi-plus-lg me-2"></i>Nueva Tarea
+                        </button>
+                    </div>
+                    <p class="text-dim">Tareas internas de MecanoClass (no se sincronizan con Classroom).</p>
+                    <div id="localAssignmentsList">
+                        <div class="text-center py-4 text-dim">Cargando tareas...</div>
                     </div>
                 </div>
             </div>
@@ -184,15 +209,20 @@
                                     value="40" min="10">
                             </div>
                         </div>
-                        <p class="small text-dim">La nota se calculará automáticamente: 50% Velocidad (hasta objetivo) +
-                            50% Precisión.</p>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-success">Publicar Tarea</button>
-                        </div>
-                    </form>
                 </div>
+                <div class="mb-3">
+                    <label for="assignDueDate" class="form-label text-dim">Fecha de Entrega</label>
+                    <input type="datetime-local" id="assignDueDate" class="form-control form-control-premium" required>
+                </div>
+                <p class="small text-dim">La nota se calculará automáticamente: 60% Velocidad (hasta objetivo) +
+                    40% Precisión.</p>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success">Publicar Tarea</button>
+                </div>
+                </form>
             </div>
         </div>
+    </div>
     </div>
 
     <div id="app-footer"></div>
@@ -206,7 +236,47 @@
     <script src="js/db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/classroom.js"></script>
+    <script src="js/local_assignments.js"></script>
     <script src="js/dashboard_class_details.js"></script>
+
+    <!-- Create Local Assignment Modal -->
+    <div class="modal fade" id="createLocalAssignmentModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">Nueva Tarea Local</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="localAssignmentForm">
+                        <div class="mb-3">
+                            <label class="form-label text-dim">Título de la Tarea</label>
+                            <input type="text" id="localAssignTitle" class="form-control form-control-premium" required
+                                placeholder="Ej: Práctica Semanal 1">
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-dim">Ejercicios Requeridos</label>
+                                <input type="number" id="localAssignCount" class="form-control form-control-premium"
+                                    required value="5" min="1">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-dim">Objetivo PPM (para el 10)</label>
+                                <input type="number" id="localAssignWpm" class="form-control form-control-premium"
+                                    required value="40" min="10">
+                            </div>
+                        </div>
+                        <p class="small text-dim">La nota se calculará automáticamente: 60% Velocidad (hasta objetivo) +
+                            40% Precisión.</p>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-info">Crear Tarea</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

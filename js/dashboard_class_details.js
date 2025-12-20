@@ -20,6 +20,7 @@ auth.onAuthStateChanged(async (user) => {
             loadClassData();
             loadAnalyticsAndActivity();
             loadTextManagement();
+            loadLocalAssignments();
         } else {
             alert("Clase no especificada");
             window.location.href = 'dashboard_teacher.html';
@@ -40,11 +41,10 @@ async function loadClassData() {
             // Check Metadata for Classroom
             if (cls.classroomCourseId) {
                 document.getElementById('classroomSection').style.display = 'flex';
-                // Store courseId globally needed for assignments? 
-                // Or just access via cls object if we need it. 
-                // But currentClassId is global.
-                // We'll attach it to the button data attribute or just retrieve it again.
-                // Better: keep cls in scope or reload it in handlers.
+
+                // Show sync students button
+                const syncBtn = document.getElementById('syncStudentsBtn');
+                if (syncBtn) syncBtn.style.display = 'inline-block';
 
                 // Initialize Assignments List
                 loadClassroomAssignments(cls.classroomCourseId);
@@ -70,21 +70,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = document.getElementById('assignTitle').value;
             const count = document.getElementById('assignCount').value;
             const wpm = document.getElementById('assignWpm').value;
+            const dueDate = document.getElementById('assignDueDate').value;
 
             // Need courseId. 
             const cls = await getClassData(currentClassId);
             if (!cls || !cls.classroomCourseId) return alert("Esta clase no está vinculada a Classroom.");
 
-            const btn = form.querySelector('button[type="submit"]');
+
+            const btn = e.submitter || form.querySelector('button[type="submit"]');
+            if (!btn) {
+                console.error("Submit button not found");
+                console.log("Form:", form);
+                console.log("Event:", e);
+                return;
+            }
+
+            const originalText = btn.innerText;
             btn.disabled = true;
             btn.innerText = "Creando...";
 
             try {
-                await createClassroomAssignment(currentClassId, cls.classroomCourseId, title, count, wpm);
+                await createClassroomAssignment(currentClassId, cls.classroomCourseId, title, count, wpm, dueDate);
                 alert("Tarea creada y publicada en Classroom.");
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('createAssignmentModal'));
-                modal.hide();
+                if (modal) modal.hide();
                 form.reset();
                 loadClassroomAssignments(cls.classroomCourseId);
             } catch (error) {
@@ -92,7 +102,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Error al crear tarea: " + error.message);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Publicar Tarea";
+                btn.innerText = originalText;
+            }
+        });
+    }
+
+    // Local assignment form listener
+    const localForm = document.getElementById('localAssignmentForm');
+    if (localForm) {
+        localForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('localAssignTitle').value;
+            const count = document.getElementById('localAssignCount').value;
+            const wpm = document.getElementById('localAssignWpm').value;
+
+            const btn = e.submitter || localForm.querySelector('button[type="submit"]');
+            if (!btn) return;
+
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Creando...";
+
+            try {
+                await createLocalAssignment(currentClassId, title, count, wpm);
+                alert("Tarea local creada correctamente.");
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createLocalAssignmentModal'));
+                if (modal) modal.hide();
+                localForm.reset();
+                loadLocalAssignments();
+            } catch (error) {
+                console.error("Local Assignment Error:", error);
+                alert("Error al crear tarea: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         });
     }
@@ -110,22 +154,138 @@ async function loadClassroomAssignments(courseId) {
             return;
         }
 
+        // Get class members
+        const members = await getClassMembers(currentClassId);
+
         list.innerHTML = '';
-        snap.forEach(doc => {
+
+        for (const doc of snap.docs) {
             const task = doc.data();
             const date = task.createdAt ? task.createdAt.toDate().toLocaleDateString() : '';
+            const assignmentId = doc.id;
+            const courseWorkId = task.classroomCourseWorkId;
+
+            // Calculate grades for each student
+            const studentGrades = [];
+
+            for (const member of members) {
+                // Get student's results for this class
+                const results = await db.collection('results')
+                    .where('studentId', '==', member.uid)
+                    .where('classId', '==', currentClassId)
+                    .get();
+
+                const resultsList = results.docs
+                    .map(d => d.data())
+                    .filter(r => r.timestamp)
+                    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                const exerciseCount = resultsList.length;
+                const requiredCount = task.exerciseCount || 1;
+                const targetWpm = task.targetWpm || 0;
+                const relevantResults = resultsList.slice(0, requiredCount);
+
+                let grade = 0;
+                let status = 'Pendiente';
+                let statusClass = 'text-warning';
+
+                if (exerciseCount >= requiredCount) {
+                    const avgWpm = relevantResults.reduce((sum, r) => sum + (r.wpm || 0), 0) / relevantResults.length;
+                    const avgAcc = relevantResults.reduce((sum, r) => sum + (r.accuracy || 0), 0) / relevantResults.length;
+
+                    const wpmRatio = Math.min(avgWpm / targetWpm, 1);
+                    const accRatio = avgAcc / 100;
+                    grade = Math.round((wpmRatio * 0.6 + accRatio * 0.4) * 10);
+
+                    status = 'Completada';
+                    statusClass = grade >= 5 ? 'text-success' : 'text-danger';
+                }
+
+                studentGrades.push({
+                    name: member.displayName,
+                    avatar: member.photoURL,
+                    progress: `${exerciseCount}/${requiredCount}`,
+                    grade,
+                    status,
+                    statusClass
+                });
+            }
+
+            // Count completed
+            const completedCount = studentGrades.filter(s => s.status === 'Completada').length;
+            const avgGrade = studentGrades.length > 0
+                ? (studentGrades.reduce((sum, s) => sum + s.grade, 0) / studentGrades.length).toFixed(1)
+                : 0;
+
+            // Build student rows
+            let studentsHTML = '';
+            if (studentGrades.length === 0) {
+                studentsHTML = '<tr><td colspan="4" class="text-center py-2 text-dim small">No hay estudiantes en esta clase</td></tr>';
+            } else {
+                studentGrades.forEach(s => {
+                    studentsHTML += `
+                        <tr>
+                            <td class="bg-transparent border-secondary py-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="${s.avatar}" class="rounded-circle" width="24" height="24">
+                                    <small class="text-light">${s.name}</small>
+                                </div>
+                            </td>
+                            <td class="bg-transparent border-secondary text-center py-2">
+                                <small class="text-info">${s.progress}</small>
+                            </td>
+                            <td class="bg-transparent border-secondary text-center py-2">
+                                <small class="${s.statusClass} fw-bold">${s.grade}/10</small>
+                            </td>
+                            <td class="bg-transparent border-secondary text-center py-2">
+                                <small class="${s.statusClass}">${s.status}</small>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
 
             const item = `
-                <div class="list-group-item bg-dark border-secondary text-light d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1 text-success fw-bold">${task.title}</h6>
-                        <small class="text-dim">Requisitos: ${task.exerciseCount} ejercicios • Objetivo: ${task.targetWpm} PPM</small>
+                <div class="card bg-dark border-secondary mb-3">
+                    <div class="card-header bg-transparent border-secondary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="checkbox" class="form-check-input sync-assignment-checkbox" 
+                                       data-assignment-id="${assignmentId}" 
+                                       data-coursework-id="${courseWorkId}"
+                                       style="font-size: 1.2em; cursor: pointer;">
+                                <div>
+                                    <h6 class="mb-1 text-success fw-bold">${task.title}</h6>
+                                    <small class="text-dim">Requisitos: ${task.exerciseCount} ejercicios • Objetivo: ${task.targetWpm} PPM • Creada: ${date}</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-dim d-block">Completadas: ${completedCount}/${studentGrades.length}</small>
+                                <small class="text-primary fw-bold">Media: ${avgGrade}/10</small>
+                            </div>
+                        </div>
                     </div>
-                    <span class="badge bg-secondary text-light">${date}</span>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="bg-transparent border-secondary text-dim small">Estudiante</th>
+                                        <th class="bg-transparent border-secondary text-dim small text-center">Progreso</th>
+                                        <th class="bg-transparent border-secondary text-dim small text-center">Nota</th>
+                                        <th class="bg-transparent border-secondary text-dim small text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${studentsHTML}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             `;
             list.insertAdjacentHTML('beforeend', item);
-        });
+        }
 
     } catch (e) {
         console.error("Error loading assignments", e);
@@ -134,6 +294,19 @@ async function loadClassroomAssignments(courseId) {
 }
 
 async function handleSyncGrades() {
+    // Get selected assignments
+    const selectedCheckboxes = document.querySelectorAll('.sync-assignment-checkbox:checked');
+
+    if (selectedCheckboxes.length === 0) {
+        alert("Por favor, selecciona al menos una tarea para sincronizar.");
+        return;
+    }
+
+    const selectedAssignments = Array.from(selectedCheckboxes).map(cb => ({
+        assignmentId: cb.dataset.assignmentId,
+        courseWorkId: cb.dataset.courseworkId
+    }));
+
     const btn = document.querySelector('button[onclick="handleSyncGrades()"]');
     const originalContent = btn.innerHTML;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sincronizando...';
@@ -143,8 +316,11 @@ async function handleSyncGrades() {
         const cls = await getClassData(currentClassId);
         if (!cls || !cls.classroomCourseId) throw new Error("Clase no vinculada.");
 
-        const count = await syncClassroomGrades(currentClassId, cls.classroomCourseId);
+        const count = await syncClassroomGrades(currentClassId, cls.classroomCourseId, selectedAssignments);
         alert(`Sincronización completada. ${count} notas actualizadas en Classroom.`);
+
+        // Uncheck all checkboxes after successful sync
+        selectedCheckboxes.forEach(cb => cb.checked = false);
 
     } catch (error) {
         console.error("Sync Error:", error);
@@ -402,5 +578,214 @@ async function renderCustomTexts() {
 
     } catch (error) {
         console.error("Error rendering custom texts:", error);
+    }
+}
+
+async function syncClassroomStudents() {
+    const btn = document.getElementById('syncStudentsBtn');
+    if (!btn) return;
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sincronizando...';
+    btn.disabled = true;
+
+    try {
+        // Get class data to retrieve classroomCourseId
+        const cls = await getClassData(currentClassId);
+
+        if (!cls || !cls.classroomCourseId) {
+            alert("Esta clase no está vinculada con Google Classroom.");
+            return;
+        }
+
+        // Get Classroom token
+        const token = await getClassroomToken();
+
+        // Import/sync students
+        const addedCount = await importClassroomStudents(token, cls.classroomCourseId, currentClassId);
+
+        // Small delay to ensure Firestore writes complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Reload members list
+        await loadAnalyticsAndActivity();
+
+        if (addedCount > 0) {
+            alert(`✅ Sincronización completada.\n\n${addedCount} estudiante(s) añadido(s) a la clase.\n\nLa lista de estudiantes se ha actualizado.`);
+        } else {
+            alert(`ℹ️ Sincronización completada.\n\nNo se encontraron nuevos estudiantes para añadir.\n\nPosibles razones:\n• Los estudiantes ya están en la clase\n• Los estudiantes aún no se han registrado en MecanoClass\n• Los emails no coinciden`);
+        }
+
+    } catch (error) {
+        console.error("Error syncing students:", error);
+        alert("❌ Error al sincronizar estudiantes:\n\n" + error.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Load local assignments
+async function loadLocalAssignments() {
+    const list = document.getElementById('localAssignmentsList');
+    list.innerHTML = '<div class="text-center p-3 text-dim">Cargando tareas...</div>';
+
+    try {
+        const localAssignments = await getLocalAssignments(currentClassId);
+
+        if (localAssignments.length === 0) {
+            list.innerHTML = '<div class="text-center p-3 text-dim">No hay tareas locales. Crea una para empezar.</div>';
+            return;
+        }
+
+        // Get class members
+        const members = await getClassMembers(currentClassId);
+
+        list.innerHTML = '';
+
+        for (const task of localAssignments) {
+            const date = task.createdAt ? task.createdAt.toDate().toLocaleDateString() : '';
+            const assignmentId = task.id;
+
+            // Calculate grades for each student
+            const studentGrades = [];
+
+            for (const member of members) {
+                // Get student's results for this class
+                const results = await db.collection('results')
+                    .where('studentId', '==', member.uid)
+                    .where('classId', '==', currentClassId)
+                    .get();
+
+                const resultsList = results.docs
+                    .map(d => d.data())
+                    .filter(r => r.timestamp)
+                    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                const exerciseCount = resultsList.length;
+                const requiredCount = task.exerciseCount || 1;
+                const targetWpm = task.targetWpm || 0;
+                const relevantResults = resultsList.slice(0, requiredCount);
+
+                let grade = 0;
+                let status = 'Pendiente';
+                let statusClass = 'text-warning';
+
+                if (exerciseCount >= requiredCount) {
+                    const avgWpm = relevantResults.reduce((sum, r) => sum + (r.wpm || 0), 0) / relevantResults.length;
+                    const avgAcc = relevantResults.reduce((sum, r) => sum + (r.accuracy || 0), 0) / relevantResults.length;
+
+                    const wpmRatio = Math.min(avgWpm / targetWpm, 1);
+                    const accRatio = avgAcc / 100;
+                    grade = Math.round((wpmRatio * 0.6 + accRatio * 0.4) * 10);
+
+                    status = 'Completada';
+                    statusClass = grade >= 5 ? 'text-success' : 'text-danger';
+                }
+
+                studentGrades.push({
+                    name: member.displayName,
+                    avatar: member.photoURL,
+                    progress: `${exerciseCount}/${requiredCount}`,
+                    grade,
+                    status,
+                    statusClass
+                });
+            }
+
+            // Count completed
+            const completedCount = studentGrades.filter(s => s.status === 'Completada').length;
+            const avgGrade = studentGrades.length > 0
+                ? (studentGrades.reduce((sum, s) => sum + s.grade, 0) / studentGrades.length).toFixed(1)
+                : 0;
+
+            // Build student rows
+            let studentsHTML = '';
+            if (studentGrades.length === 0) {
+                studentsHTML = '<tr><td colspan="4" class="text-center py-2 text-dim small">No hay estudiantes en esta clase</td></tr>';
+            } else {
+                studentGrades.forEach(s => {
+                    studentsHTML += `
+                        <tr>
+                            <td class="bg-transparent border-secondary py-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="${s.avatar}" class="rounded-circle" width="24" height="24">
+                                    <small class="text-light">${s.name}</small>
+                                </div>
+                            </td>
+                            <td class="bg-transparent border-secondary text-center py-2">
+                                <small class="text-info">${s.progress}</small>
+                            </td>
+                            <td class="bg-transparent border-secondary text-center py-2">
+                                <small class="${s.statusClass} fw-bold">${s.grade}/10</small>
+                            </td>
+                            <td class="bg-transparent border-secondary text-center py-2">
+                                <small class="${s.statusClass}">${s.status}</small>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const item = `
+                <div class="card bg-dark border-secondary mb-3">
+                    <div class="card-header bg-transparent border-secondary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <button class="btn btn-sm btn-danger" onclick="deleteAssignment('${assignmentId}')" 
+                                        title="Eliminar tarea">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <div>
+                                    <h6 class="mb-1 text-info fw-bold">${task.title}</h6>
+                                    <small class="text-dim">Requisitos: ${task.exerciseCount} ejercicios • Objetivo: ${task.targetWpm} PPM • Creada: ${date}</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-dim d-block">Completadas: ${completedCount}/${studentGrades.length}</small>
+                                <small class="text-primary fw-bold">Media: ${avgGrade}/10</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="bg-transparent border-secondary text-dim small">Estudiante</th>
+                                        <th class="bg-transparent border-secondary text-dim small text-center">Progreso</th>
+                                        <th class="bg-transparent border-secondary text-dim small text-center">Nota</th>
+                                        <th class="bg-transparent border-secondary text-dim small text-center">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${studentsHTML}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('beforeend', item);
+        }
+
+    } catch (e) {
+        console.error("Error loading local assignments", e);
+        list.innerHTML = '<div class="text-danger p-3">Error cargando tareas.</div>';
+    }
+}
+
+async function deleteAssignment(assignmentId) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer.')) {
+        return;
+    }
+
+    try {
+        await deleteLocalAssignment(currentClassId, assignmentId);
+        loadLocalAssignments();
+        alert('Tarea eliminada correctamente.');
+    } catch (error) {
+        console.error('Error deleting assignment:', error);
+        alert('Error al eliminar la tarea: ' + error.message);
     }
 }

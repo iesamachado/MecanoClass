@@ -31,6 +31,20 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated(); // Ideally restrict to teachers
       allow update, delete: if resource.data.teacherId == request.auth.uid;
+      
+      // Subcollection: assignments
+      match /assignments/{assignmentId} {
+        allow read: if isAuthenticated();
+        // Only the class teacher can create/update assignments
+        allow create, update: if get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+      }
+      
+      // Subcollection: class_texts (custom texts for the class)
+      match /class_texts/{textId} {
+        allow read: if isAuthenticated();
+        // Only the class teacher can manage texts
+        allow create, update, delete: if get(/databases/$(database)/documents/classes/$(classId)).data.teacherId == request.auth.uid;
+      }
     }
 
     // --- Class Members Collection ---
