@@ -2,11 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
 :root {
-    --primary-color: #6366f1; /* Indigo */
-    --secondary-color: #a855f7; /* Purple */
-    --accent-color: #ec4899; /* Pink */
-    --background-dark: #0f172a; /* Slate 900 */
-    --surface-dark: #1e293b; /* Slate 800 */
+    --primary-color: #6366f1;
+    /* Indigo */
+    --secondary-color: #a855f7;
+    /* Purple */
+    --accent-color: #ec4899;
+    /* Pink */
+    --background-dark: #0f172a;
+    /* Slate 900 */
+    --surface-dark: #1e293b;
+    /* Slate 800 */
     --text-light: #f8fafc;
     --text-dim: #94a3b8;
     --glass-bg: rgba(30, 41, 59, 0.7);
@@ -17,10 +22,12 @@ body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--background-dark);
     color: var(--text-light);
-    background-image: 
+    background-image:
         radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Glassmorphism Utilities */
@@ -60,9 +67,17 @@ body {
 
 /* Animations */
 @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
 }
 
 .animate-float {
@@ -96,6 +111,7 @@ body {
     transition: color 0.3s;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
     color: var(--text-light) !important;
 }

@@ -27,20 +27,19 @@ auth.onAuthStateChanged(async (user) => {
         // Redirect based on role if not already on the correct page
         const currentPage = window.location.pathname;
 
-        if (profile.role === 'teacher' && !currentPage.includes('dashboard_teacher.html') && !currentPage.includes('dashboard_class_details.html') && !currentPage.includes('live_host.html') && !currentPage.includes('practice.html') && !currentPage.includes('profile.html')) {
-            // Allow teacher pages or redirect
-            // Simple check: if we are on index or student page, redirect
+        if (profile.role === 'teacher' && !currentPage.includes('dashboard_teacher.html') && !currentPage.includes('dashboard_class_details.html') && !currentPage.includes('live_host.html') && !currentPage.includes('practice.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html')) {
             window.location.href = 'dashboard_teacher.html';
-        } else if (profile.role === 'student' && !currentPage.includes('dashboard_student.html') && !currentPage.includes('practice.html') && !currentPage.includes('live_player.html') && !currentPage.includes('profile.html')) {
-            // Allow student pages or redirect
+        } else if (profile.role === 'student' && !currentPage.includes('dashboard_student.html') && !currentPage.includes('practice.html') && !currentPage.includes('live_player.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html')) {
             window.location.href = 'dashboard_student.html';
         }
+
+        // Render Header
+        if (window.Components) window.Components.renderHeader(user, profile);
 
     } else {
         // User is signed out.
         console.log("User signed out.");
-        // Optional: Redirect to index if on protected page?
-        // But dashboard scripts also handle this. Let's leave it to them or centralize here.
+        if (window.Components) window.Components.renderHeader(null, null);
     }
 });
 

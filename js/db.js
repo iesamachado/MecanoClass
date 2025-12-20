@@ -138,16 +138,28 @@ async function getClassMembers(classId) {
 
 /**
  * Saves a practice or game result
+ * @param {string} studentId - User ID
+ * @param {number} wpm - Words per minute
+ * @param {number} accuracy - Accuracy percentage
+ * @param {string} mode - 'practice' or other mode
+ * @param {string|null} classId - Class ID if applicable
+ * @param {string|null} textSummary - First 50 chars of practiced text (optional)
+ * @param {number|null} duration - Practice duration in seconds (optional)
  */
-async function saveResult(studentId, wpm, accuracy, mode = 'practice', classId = null) {
-    await db.collection(dbCollection.RESULTS).add({
+async function saveResult(studentId, wpm, accuracy, mode = 'practice', classId = null, textSummary = null, duration = null) {
+    const data = {
         studentId,
         wpm,
         accuracy,
         mode,
         classId,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+
+    if (textSummary) data.textSummary = textSummary;
+    if (duration) data.duration = duration;
+
+    await db.collection(dbCollection.RESULTS).add(data);
 }
 
 async function getStudentResults(studentId, limit = 10) {

@@ -12,9 +12,10 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         // Update UI
-        document.getElementById('userName').innerText = profile.displayName;
-        document.getElementById('userAvatar').src = profile.photoURL;
-        document.getElementById('userAvatar').style.display = 'block';
+        // Header UI handled by components.js
+        // document.getElementById('userName').innerText = profile.displayName;
+        // document.getElementById('userAvatar').src = profile.photoURL;
+        // document.getElementById('userAvatar').style.display = 'block';
 
         // Big Header
         document.getElementById('welcomeText').innerText = `¡Hola, ${profile.displayName.split(' ')[0]}!`;
@@ -23,6 +24,7 @@ auth.onAuthStateChanged(async (user) => {
         loadStudentStats();
         loadDailyRanking();
         loadStudentClasses();
+        loadStudentHistory();
 
     } else {
         window.location.href = 'index.html';
@@ -171,3 +173,37 @@ async function loadStudentClasses() {
     }
 }
 
+
+async function loadStudentHistory() {
+    const tbody = document.getElementById('historyTableBody');
+    try {
+        // reuse getStudentResults, maybe increase limit
+        const results = await getStudentResults(currentUser.uid, 20);
+
+        if (results.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-dim">No tienes actividad reciente.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        results.forEach(r => {
+            const date = r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleDateString() + ' ' + new Date(r.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+            const modeLabel = r.classId ? '<span class="badge bg-primary">Clase</span>' : '<span class="badge bg-secondary">Práctica</span>';
+
+            const tr = `
+                <tr>
+                    <td class="bg-transparent border-secondary text-dim ps-4 text-nowrap">${date}</td>
+                    <td class="bg-transparent border-secondary text-primary text-center fw-bold">${r.wpm}</td>
+                    <td class="bg-transparent border-secondary text-info text-center">${r.accuracy}%</td>
+                    <td class="bg-transparent border-secondary text-end pe-4">${modeLabel}</td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', tr);
+        });
+
+    } catch (e) {
+        console.error("Error loading history", e);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Error al cargar historial.</td></tr>';
+    }
+}

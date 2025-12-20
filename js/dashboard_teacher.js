@@ -12,12 +12,14 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         // Update UI
-        document.getElementById('userName').innerText = profile.displayName;
-        document.getElementById('userAvatar').src = profile.photoURL;
-        document.getElementById('userAvatar').style.display = 'block';
+        // UI updates handled by components.js for header
+        // document.getElementById('userName').innerText = profile.displayName;
+        // document.getElementById('userAvatar').src = profile.photoURL;
+        // document.getElementById('userAvatar').style.display = 'block';
 
         loadClasses();
         loadTeacherStats();
+        loadTeacherHistory();
     } else {
         window.location.href = 'index.html';
     }
@@ -108,5 +110,49 @@ async function loadClasses() {
     } catch (error) {
         console.error("Error loading classes:", error);
         listContainer.innerHTML = '<p class="text-danger text-center">Error al cargar las clases.</p>';
+    }
+}
+
+async function loadTeacherHistory() {
+    const tbody = document.getElementById('teacherHistoryTableBody');
+    try {
+        const results = await getStudentResults(currentUser.uid, 30);
+
+        if (results.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-dim">No tienes actividad reciente.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+
+        results.forEach(r => {
+            const date = r.timestamp
+                ? new Date(r.timestamp.seconds * 1000).toLocaleDateString() + ' ' +
+                new Date(r.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'N/A';
+
+            const textSummary = r.textSummary
+                ? `<span class="text-light small">${r.textSummary}...</span>`
+                : '<span class="text-dim">-</span>';
+
+            const duration = r.duration
+                ? `<span class="text-info">${Math.floor(r.duration / 60)}:${String(r.duration % 60).padStart(2, '0')}</span>`
+                : '<span class="text-dim">-</span>';
+
+            const tr = `
+                <tr>
+                    <td class="bg-transparent border-secondary text-dim ps-4 text-nowrap">${date}</td>
+                    <td class="bg-transparent border-secondary">${textSummary}</td>
+                    <td class="bg-transparent border-secondary text-center">${duration}</td>
+                    <td class="bg-transparent border-secondary text-primary text-center fw-bold">${r.wpm}</td>
+                    <td class="bg-transparent border-secondary text-info text-center pe-4">${r.accuracy}%</td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', tr);
+        });
+
+    } catch (e) {
+        console.error("Error loading teacher history", e);
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Error al cargar historial.</td></tr>';
     }
 }
