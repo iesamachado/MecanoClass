@@ -21,6 +21,14 @@ class TypingEngine {
         this.init();
     }
 
+    get position() {
+        return this.currentIndex;
+    }
+
+    get text() {
+        return this.fullText;
+    }
+
     init() {
         this.renderText();
         this.elements.input.addEventListener('compositionstart', () => { this.isComposing = true; });
@@ -61,9 +69,11 @@ class TypingEngine {
 
         if (lastChar === targetChar) {
             this.markChar(this.currentIndex, 'correct');
+            if (this.callbacks.onCorrectKey) this.callbacks.onCorrectKey();
         } else {
             this.markChar(this.currentIndex, 'incorrect');
             this.errors++;
+            if (this.callbacks.onIncorrectKey) this.callbacks.onIncorrectKey();
         }
 
         this.currentIndex++;

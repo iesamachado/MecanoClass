@@ -74,39 +74,57 @@
                     </div>
                 </div>
 
-                <!-- Typing Box -->
+                <!-- Typing Box --\u003e
                 <div id="gameContainer" class="glass-panel p-5 position-relative">
-                    <div id="textDisplay" class="typing-area text-secondary">Cargando texto...</div>
-                    <input type="text" id="hiddenInput" autocomplete="off" spellcheck="false">
+                    <!-- Platform Game Canvas -->
+                <canvas id="platformGameCanvas" class="w-100 mb-3" style="border-radius: 8px;"></canvas>
 
-                    <div id="overlayStart"
-                        class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-75 rounded-3"
-                        style="z-index: 10;">
-                        <button type="button" class="btn btn-premium btn-lg" onclick="startPractice(event)">
-                            <i class="bi bi-play-fill me-2"></i>Comenzar
-                        </button>
-                    </div>
+                <div id="textDisplay" class="typing-area text-secondary">Cargando texto...</div>
+                <input type="text" id="hiddenInput" autocomplete="off" spellcheck="false">
 
-                    <div id="overlayEnd"
-                        class="position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center bg-dark bg-opacity-95 rounded-3"
-                        style="z-index: 11; display: none;">
-                        <div class="text-center">
-                            <h2 class="text-success mb-3">¡Completado!</h2>
-                            <h1 class="display-3 text-light fw-bold mb-4" id="finalWpm">0 PPM</h1>
-                            <div class="d-flex gap-3 justify-content-center">
-                                <button class="btn btn-outline-light" onclick="location.reload()">Repetir</button>
-                                <button class="btn btn-premium" onclick="saveAndExit()">Guardar Resultado</button>
-                            </div>
+                <div id="overlayStart"
+                    class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-75 rounded-3"
+                    style="z-index: 10;">
+                    <button type="button" class="btn btn-premium btn-lg" onclick="startPractice(event)">
+                        <i class="bi bi-play-fill me-2"></i>Comenzar
+                    </button>
+                </div>
+
+                <div id="overlayEnd"
+                    class="position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center bg-dark bg-opacity-95 rounded-3"
+                    style="z-index: 11; display: none;">
+                    <div class="text-center">
+                        <h2 class="text-success mb-3">¡Completado!</h2>
+                        <h1 class="display-3 text-light fw-bold mb-4" id="finalWpm">0 PPM</h1>
+                        <div class="d-flex gap-3 justify-content-center">
+                            <button class="btn btn-outline-light" onclick="location.reload()">Repetir</button>
+                            <button class="btn btn-premium" onclick="saveAndExit()">Guardar Resultado</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-4 text-center text-dim">
-                    <small>Haz clic en el recuadro para enfocar • Pulsa ESC para reiniciar</small>
+                <!-- Failed Overlay (accuracy < 90%) -->
+                <div id="overlayFailed"
+                    class="position-absolute top-0 start-0 w-100 h-100 align-items-center justify-content-center bg-dark bg-opacity-95 rounded-3"
+                    style="z-index: 11; display: none;">
+                    <div class="text-center">
+                        <h2 class="text-danger mb-3">❌ Precisión Insuficiente</h2>
+                        <p class="text-light mb-2">Necesitas al menos <span class="text-warning fw-bold">90% de
+                                precisión</span> para guardar</p>
+                        <h3 class="text-light mb-1">Tu precisión: <span id="failedAccuracy"
+                                class="text-danger">0%</span></h3>
+                        <p class="text-dim mb-4">Velocidad: <span id="failedWpm">0 PPM</span></p>
+                        <button class="btn btn-premium" onclick="location.reload()">🔄 Vuelve a Intentarlo</button>
+                    </div>
                 </div>
-
             </div>
+
+            <div class="mt-4 text-center text-dim">
+                <small>Haz clic en el recuadro para enfocar • Pulsa ESC para reiniciar</small>
+            </div>
+
         </div>
+    </div>
     </div>
 
     <div id="app-footer"></div>
@@ -120,6 +138,7 @@
     <script src="js/initial_texts.js"></script>
     <script src="js/db.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/platform-game.js"></script>
     <script src="js/typing-engine.js"></script>
     <script>
         let engine;
@@ -156,9 +175,40 @@
 
             practiceText = textData; // Store for summary
 
+            // Initialize platform game
+            const game = new PlatformGame('platformGameCanvas');
+
+            // Set user avatar if available
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    const profile = await getUserProfile(user.uid);
+                    if (profile && profile.photoURL) {
+                        game.setAvatar(profile.photoURL);
+                    }
+                }
+            });
+
             engine = new TypingEngine(textData, {
                 onComplete: showResults,
-                onUpdate: updateStats
+                onUpdate: (wpm, accuracy) => {
+                    updateStats(wpm, accuracy);
+
+                    // Update game stats for progress bar
+                    game.progress = engine.position / engine.text.length;
+                    game.accuracy = accuracy / 100;
+                    game.draw(); // Redraw to update progress bar
+                },
+                onCorrectKey: () => {
+                    game.onCorrectKey(); // Trigger jump animation
+
+                    // Update position based on correct keys only
+                    const correctKeys = engine.position - engine.errors;
+                    game.updatePosition(correctKeys, engine.text.length);
+                },
+                onIncorrectKey: () => {
+                    // Character doesn't move on incorrect key
+                    game.draw(); // Redraw to update progress bar color
+                }
             });
 
             // ESC to restart
@@ -181,9 +231,12 @@
             input.focus();
 
             // Enable click-to-focus on container now that game started
-            document.getElementById('gameContainer').onclick = function () {
-                input.focus();
-            };
+            const gameContainer = document.getElementById('gameContainer');
+            if (gameContainer) {
+                gameContainer.onclick = function () {
+                    input.focus();
+                };
+            }
 
             engine.start();
         }
@@ -194,10 +247,19 @@
         }
 
         function showResults(stats) {
-            document.getElementById('overlayEnd').style.display = 'flex';
-            document.getElementById('finalWpm').innerText = stats.wpm + ' PPM';
-            // Store stats for saving
-            engine.finalStats = stats;
+            // Check if accuracy meets minimum requirement (90%)
+            if (stats.accuracy < 90) {
+                // Failed - accuracy too low
+                document.getElementById('overlayFailed').style.display = 'flex';
+                document.getElementById('failedAccuracy').innerText = stats.accuracy + '%';
+                document.getElementById('failedWpm').innerText = stats.wpm + ' PPM';
+            } else {
+                // Passed - show results and allow saving
+                document.getElementById('overlayEnd').style.display = 'flex';
+                document.getElementById('finalWpm').innerText = stats.wpm + ' PPM';
+                // Store stats for saving
+                engine.finalStats = stats;
+            }
         }
 
         async function saveAndExit() {
