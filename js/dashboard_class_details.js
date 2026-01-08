@@ -20,7 +20,11 @@ auth.onAuthStateChanged(async (user) => {
             loadClassData();
             loadAnalyticsAndActivity();
             loadTextManagement();
+            loadClassData();
+            loadAnalyticsAndActivity();
+            loadTextManagement();
             loadLocalAssignments();
+            loadTeacherStats(); // Load header stats
         } else {
             alert("Clase no especificada");
             window.location.href = 'dashboard_teacher.html';
@@ -30,6 +34,38 @@ auth.onAuthStateChanged(async (user) => {
         window.location.href = 'index.html';
     }
 });
+
+async function loadTeacherStats() {
+    try {
+        const allResults = await getStudentResults(currentUser.uid, 20);
+
+        // Filter valid results
+        const results = allResults.filter(r => (r.accuracy || 0) >= 90);
+
+        if (results.length > 0) {
+            const last10 = results.slice(0, 10);
+            const wpmSum10 = last10.reduce((s, r) => s + (r.wpm || 0), 0);
+            const accSum10 = last10.reduce((s, r) => s + (r.accuracy || 0), 0);
+
+            const last10Wpm = Math.round(wpmSum10 / last10.length);
+            const last10Acc = Math.round(accSum10 / last10.length);
+
+            const headerWpm = document.getElementById('headerWpm');
+            const headerAcc = document.getElementById('headerAcc');
+
+            if (headerWpm) headerWpm.innerText = last10Wpm;
+            if (headerAcc) headerAcc.innerText = last10Acc;
+        } else {
+            const headerWpm = document.getElementById('headerWpm');
+            const headerAcc = document.getElementById('headerAcc');
+
+            if (headerWpm) headerWpm.innerText = '0';
+            if (headerAcc) headerAcc.innerText = '0';
+        }
+    } catch (e) {
+        console.error("Error loading teacher stats", e);
+    }
+}
 
 async function loadClassData() {
     try {
@@ -177,7 +213,7 @@ async function loadClassroomAssignments(courseId) {
 
                 const resultsList = results.docs
                     .map(d => d.data())
-                    .filter(r => r.timestamp)
+                    .filter(r => r.timestamp && (r.accuracy || 0) >= 90) // Filter low accuracy
                     .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                 const exerciseCount = resultsList.length;
@@ -375,14 +411,22 @@ async function loadAnalyticsAndActivity() {
         // Calculate aggregates
         const rankingData = Object.values(studentStats);
         rankingData.forEach(stat => {
-            stat.total = stat.results.length;
-            if (stat.total > 0) {
+            // Apply filtering for calculations ONLY
+            const validResults = stat.results.filter(r => (r.accuracy || 0) >= 90);
+
+            stat.total = stat.results.length; // Total attempts (keep all?) User said "discard for average". 
+            // Activity count usually means "how much they practiced", so maybe keep total.
+            // But "Average Accuracy" implies calculating only on valid ones? 
+            // "descartar los ejercicios con precisión por debajo del 90%" usually refers to the metric calc.
+            // Let's use validResults for Acc and WPM calc.
+
+            if (validResults.length > 0) {
                 // Accuracy
-                const accSum = stat.results.reduce((s, r) => s + (r.accuracy || 0), 0);
-                stat.avgAcc = Math.round(accSum / stat.total);
+                const accSum = validResults.reduce((s, r) => s + (r.accuracy || 0), 0);
+                stat.avgAcc = Math.round(accSum / validResults.length);
 
                 // Last 10 PPM
-                const last10 = stat.results.slice(0, 10);
+                const last10 = validResults.slice(0, 10);
                 const wpmSum = last10.reduce((s, r) => s + (r.wpm || 0), 0);
                 stat.last10MeanWpm = Math.round(wpmSum / last10.length);
             }
@@ -659,7 +703,7 @@ async function loadLocalAssignments() {
 
                 const resultsList = results.docs
                     .map(d => d.data())
-                    .filter(r => r.timestamp)
+                    .filter(r => r.timestamp && (r.accuracy || 0) >= 90) // Filter low accuracy
                     .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                 const exerciseCount = resultsList.length;

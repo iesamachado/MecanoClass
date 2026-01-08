@@ -72,6 +72,17 @@ async function getTeacherClasses(teacherId) {
     return classes;
 }
 
+async function getStudentClasses(studentId) {
+    const snapshot = await db.collection(dbCollection.CLASSES)
+        .where('members', 'array-contains', studentId)
+        .get();
+
+    const classes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort by name or creation date? Let's sort by name for consistency
+    classes.sort((a, b) => a.name.localeCompare(b.name));
+    return classes;
+}
+
 
 /**
  * Creates 'users' document if it doesn't exist
@@ -354,11 +365,18 @@ async function startLiveSession(pin) {
     });
 }
 
-async function updateParticipantProgress(pin, studentId, wpm, progress) {
-    await db.collection(dbCollection.LIVE_PARTICIPANTS).doc(`${pin}_${studentId}`).update({
+async function updateParticipantProgress(pin, studentId, wpm, progress, accuracy = 0, status = 'playing') {
+    const updateData = {
         wpm,
-        progress
-    });
+        progress,
+        accuracy
+    };
+
+    // Only update status if provided (default 'playing' might override 'finished' if not careful, 
+    // but usually player calls this. logic in player.js will manage status transitions)
+    if (status) updateData.status = status;
+
+    await db.collection(dbCollection.LIVE_PARTICIPANTS).doc(`${pin}_${studentId}`).update(updateData);
 }
 
 // --- Class Text Management ---
@@ -426,4 +444,28 @@ async function getPracticeTextForClass(classId) {
         console.error("Error fetching class practice text:", error);
         return null; // Handle fallback in UI
     }
+}
+
+// --- Admin ---
+
+async function getSiteSettings() {
+    const doc = await db.collection('settings').doc('site').get();
+    if (doc.exists) return doc.data();
+    return { siteUrl: window.location.origin }; // Default fallback
+}
+
+async function updateSiteSettings(settings) {
+    await db.collection('settings').doc('site').set(settings, { merge: true });
+}
+
+async function getAllUsers() {
+    // Note: In a large app, this should be paginated or use a specific admin SDK function.
+    // For this size, getting all users provided they are in the 'users' collection is okay-ish for a prototype.
+    const snap = await db.collection('users').orderBy('displayName').get();
+    return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+}
+
+async function getTeacherClassesAdmin(teacherId) {
+    const snap = await db.collection('classes').where('teacherId', '==', teacherId).get();
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }

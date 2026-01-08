@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración - MecanoClass</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="app-header"></div>
+
+    <div class="container py-5 flex-grow-1">
+        <div class="glass-panel p-5 mb-5">
+            <h2 class="text-light fw-bold mb-4"><i class="bi bi-shield-lock-fill me-3"></i>Panel de Administración</h2>
+            <p class="text-dim">Gestión de configuración del sitio y usuarios.</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Site Settings -->
+            <div class="col-12">
+                <div class="glass-panel p-4">
+                    <h4 class="text-info mb-4"><i class="bi bi-sliders me-2"></i>Configuración General</h4>
+                    <form id="siteSettingsForm">
+                        <div class="mb-3">
+                            <label class="form-label text-dim">URL Base del Sitio</label>
+                            <input type="url" id="siteUrlInput" class="form-control form-control-premium" required
+                                placeholder="https://mecanoclass.com">
+                            <div class="form-text text-dim">
+                                Esta URL se utilizará para generar los enlaces en las tareas de Google Classroom.
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Users List -->
+            <div class="col-12">
+                <div class="glass-panel p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="text-light mb-0"><i class="bi bi-people me-2"></i>Usuarios Registrados</h4>
+                        <div class="input-group" style="max-width: 300px;">
+                            <span class="input-group-text bg-dark border-secondary text-dim"><i
+                                    class="bi bi-search"></i></span>
+                            <input type="text" id="searchUser" class="form-control bg-dark border-secondary text-light"
+                                placeholder="Buscar usuario...">
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs border-secondary mb-3" id="adminTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active text-light" id="teachers-tab" data-bs-toggle="tab"
+                                data-bs-target="#teachersPane" type="button" role="tab">Docentes</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link text-dim" id="students-tab" data-bs-toggle="tab"
+                                data-bs-target="#studentsPane" type="button" role="tab">Alumnos</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="adminTabsContent">
+                        <!-- Teachers Pane -->
+                        <div class="tab-pane fade show active" id="teachersPane" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover mb-0 bg-transparent align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th class="bg-transparent border-secondary text-dim ps-3">Usuario</th>
+                                            <th class="bg-transparent border-secondary text-dim">Email</th>
+                                            <th class="bg-transparent border-secondary text-dim text-center">Clases
+                                                Creadas</th>
+                                            <th class="bg-transparent border-secondary text-dim text-end pe-3">Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="teachersTableBody">
+                                        <!-- Loaded via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Students Pane -->
+                        <div class="tab-pane fade" id="studentsPane" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover mb-0 bg-transparent align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th class="bg-transparent border-secondary text-dim ps-3">Usuario</th>
+                                            <th class="bg-transparent border-secondary text-dim">Email</th>
+                                            <th class="bg-transparent border-secondary text-dim text-center">Clases
+                                                Unidas</th>
+                                            <th class="bg-transparent border-secondary text-dim text-end pe-3">Acciones
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentsTableBody">
+                                        <!-- Loaded via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Teacher Classes -->
+    <div class="modal fade" id="teacherClassesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glass-panel border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light" id="teacherClassesTitle">Clases del Docente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="list-group list-group-flush bg-transparent" id="teacherClassesList">
+                        <!-- Loaded via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Class Students -->
+    <div class="modal fade" id="classStudentsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glass-panel border-secondary">
+                <div class="modal-header border-secondary">
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" data-bs-dismiss="modal"
+                        data-bs-toggle="modal" data-bs-target="#teacherClassesModal">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                    <h5 class="modal-title text-light" id="classStudentsTitle">Alumnos de la Clase</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <table class="table table-dark table-hover mb-0 bg-transparent align-middle">
+                        <thead>
+                            <tr>
+                                <th class="bg-transparent border-secondary text-dim ps-4">Alumno</th>
+                                <th class="bg-transparent border-secondary text-dim">Email</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classStudentsTableBody">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="app-footer"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+
+</body>
+
+</html>

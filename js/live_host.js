@@ -108,21 +108,33 @@ function updateRaceTracks(currentParticipants) {
         if (lane) {
             const avatar = lane.querySelector('.racer-avatar');
             avatar.style.left = `calc(${p.progress}% - 25px)`; // -25px is half avatar width
+
+            // Visual feedback for disqualification
+            if (p.status === 'disqualified') {
+                avatar.style.border = '2px solid red';
+                avatar.style.opacity = '0.7';
+                // Optional: Add an icon or change lane color?
+                lane.style.background = 'rgba(248, 113, 113, 0.1)';
+            }
         }
     });
 
     // Check for game End (all finished or close enough)
+    // We consider 'disqualified' players as finished for the purpose of ending the game logic
     if (currentParticipants.length > 0 && currentParticipants.every(p => p.progress >= 100)) {
         showPodium(currentParticipants);
     }
 }
 
 function showPodium(finalParticipants) {
+    // Filter out disqualified players
+    const qualifiedParticipants = finalParticipants.filter(p => p.status !== 'disqualified');
+
     // Sort logic here (needs finishedAt ideally)
     // loose sort by WPM for now as proxy?
-    finalParticipants.sort((a, b) => b.wpm - a.wpm);
+    qualifiedParticipants.sort((a, b) => b.wpm - a.wpm);
 
-    const [first, second, third] = finalParticipants;
+    const [first, second, third] = qualifiedParticipants;
 
     if (first) setPodiumData('gold', first);
     if (second) setPodiumData('silver', second);

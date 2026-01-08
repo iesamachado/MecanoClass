@@ -52,38 +52,24 @@ async function handleJoinClass() {
 async function loadStudentStats() {
     try {
         // Fetch last 50 results for average
-        const results = await getStudentResults(currentUser.uid, 50);
+        const allResults = await getStudentResults(currentUser.uid, 50);
 
-        // 1. Calculate General Averages (based on what we fetched, usually last 50 is treated as "recent average")
-        if (results.length > 0) {
-            const totalWpm = results.reduce((sum, r) => sum + (r.wpm || 0), 0);
-            const totalAcc = results.reduce((sum, r) => sum + (r.accuracy || 0), 0);
+        // Filter valid results (accuracy >= 90%)
+        const results = allResults.filter(r => (r.accuracy || 0) >= 90);
 
-            const avgWpm = Math.round(totalWpm / results.length);
-            const avgAcc = Math.round(totalAcc / results.length);
+        // 1. Calculate General Averages using AppUI
+        const stats = AppUI.calculateAverages(results);
 
-            document.getElementById('avgWpm').innerText = avgWpm;
-            document.getElementById('avgAcc').innerText = avgAcc + '%';
+        document.getElementById('avgWpm').innerText = stats.wpm;
+        document.getElementById('avgAcc').innerText = stats.accuracy + '%';
 
-            // 2. Calculate Last 10 for Header Stats
-            const last10 = results.slice(0, 10);
-            const wpmSum10 = last10.reduce((s, r) => s + (r.wpm || 0), 0);
-            const accSum10 = last10.reduce((s, r) => s + (r.accuracy || 0), 0);
+        // Header stats are now handled by AppUI.fetchAndRenderStats() automatically on load/auth
+        // No need to duplicate update logic here.
 
-            const last10Wpm = Math.round(wpmSum10 / last10.length);
-            const last10Acc = Math.round(accSum10 / last10.length);
-
-            document.getElementById('headerWpm').innerText = last10Wpm;
-            document.getElementById('headerAcc').innerText = last10Acc;
-
-        } else {
-            document.getElementById('avgWpm').innerText = '0';
-            document.getElementById('avgAcc').innerText = '0%';
-            document.getElementById('headerWpm').innerText = '0';
-            document.getElementById('headerAcc').innerText = '0';
-        }
     } catch (e) {
         console.error("Error loading stats", e);
+        document.getElementById('avgWpm').innerText = '--';
+        document.getElementById('avgAcc').innerText = '--%';
     }
 }
 

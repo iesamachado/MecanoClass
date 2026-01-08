@@ -18,6 +18,10 @@
     --glass-border: rgba(255, 255, 255, 0.1);
 }
 
+.text-dim {
+    color: var(--text-dim) !important;
+}
+
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--background-dark);
@@ -114,4 +118,29 @@ body {
 .nav-link:hover,
 .nav-link.active {
     color: var(--text-light) !important;
+}
+
+/* Tabs Override for Dark Theme */
+.nav-tabs {
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    margin-bottom: -1px;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: var(--primary-color) !important;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: transparent !important;
+    border-color: transparent transparent var(--primary-color) !important;
+    border-bottom-width: 2px !important;
+    font-weight: 600;
+    color: var(--primary-color) !important;
 }

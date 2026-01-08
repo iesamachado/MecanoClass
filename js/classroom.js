@@ -214,8 +214,19 @@ async function importClassroomStudents(token, courseId, classId) {
 async function createClassroomAssignment(classId, courseId, title, exerciseCount, targetWpm, dueDate) {
     const token = await getClassroomToken();
 
+    // Get Site URL from Settings
+    let siteUrl = window.location.origin; // default
+    try {
+        const settings = await getSiteSettings();
+        if (settings && settings.siteUrl) {
+            siteUrl = settings.siteUrl.replace(/\/$/, ''); // remove trailing slash
+        }
+    } catch (e) {
+        console.warn("Could not fetch site settings, using default origin", e);
+    }
+
     // Get the practice URL for this class
-    const practiceUrl = `${window.location.origin}/practice.html?classId=${classId}`;
+    const practiceUrl = `${siteUrl}/practice.html?classId=${classId}`;
 
     // Parse due date to Google Classroom format
     let dueDateObj = null;

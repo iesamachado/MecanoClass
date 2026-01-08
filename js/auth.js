@@ -5,7 +5,7 @@ let selectedRole = null; // Store role for new sign-ups
 // Listen for auth state changes
 auth.onAuthStateChanged(async (user) => {
     if (user) {
-        console.log("User logged in:", user.uid);
+        //  console.log("User logged in:", user.uid);
         // User is signed in.
         // Check if profile exists, if not create it with selectedRole
         // If selectedRole is null (reload), we just fetch existing role
@@ -27,19 +27,19 @@ auth.onAuthStateChanged(async (user) => {
         // Redirect based on role if not already on the correct page
         const currentPage = window.location.pathname;
 
-        if (profile.role === 'teacher' && !currentPage.includes('dashboard_teacher.html') && !currentPage.includes('dashboard_class_details.html') && !currentPage.includes('live_host.html') && !currentPage.includes('practice.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html')) {
+        if (profile.role === 'teacher' && !currentPage.includes('dashboard_teacher.html') && !currentPage.includes('dashboard_class_details.html') && !currentPage.includes('live_host.html') && !currentPage.includes('practice.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html') && !currentPage.includes('admin.html') && !currentPage.includes('admin_setup.html')) {
             window.location.href = 'dashboard_teacher.html';
-        } else if (profile.role === 'student' && !currentPage.includes('dashboard_student.html') && !currentPage.includes('practice.html') && !currentPage.includes('live_player.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html')) {
+        } else if (profile.role === 'student' && !currentPage.includes('dashboard_student.html') && !currentPage.includes('practice.html') && !currentPage.includes('live_player.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html') && !currentPage.includes('admin.html') && !currentPage.includes('admin_setup.html')) {
             window.location.href = 'dashboard_student.html';
         }
 
         // Render Header
-        if (window.Components) window.Components.renderHeader(user, profile);
+        if (window.AppUI) window.AppUI.renderHeader(user, profile);
 
     } else {
         // User is signed out.
         console.log("User signed out.");
-        if (window.Components) window.Components.renderHeader(null, null);
+        if (window.AppUI) window.AppUI.renderHeader(null, null);
     }
 });
 

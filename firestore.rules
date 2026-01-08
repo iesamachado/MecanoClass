@@ -7,22 +7,22 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    function isTeacher() {
-      // In a real secure app, we'd check the user doc, but that costs a read.
-      // For now we rely on the client-side role or assume teachers create classes under their UID.
-      // Alternatively, we can check resource.data.role if we were strict.
-      return isAuthenticated(); 
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
     // --- Users Collection ---
-    // Public read (for avatars/names in leaderboards), Write own only
+    // Public read (for avatars/names), Write own or Admin
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+    }
+
+    // --- Settings Collection ---
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     // --- Classes Collection ---

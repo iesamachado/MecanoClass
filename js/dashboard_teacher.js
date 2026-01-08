@@ -6,6 +6,7 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
         const profile = await getUserProfile(user.uid);
+        //  console.log("Teacher Dashboard - Profile:", profile); // DEBUG LOG
         if (!profile || profile.role !== 'teacher') {
             window.location.href = 'index.html'; // Protect route
             return;
@@ -28,7 +29,11 @@ auth.onAuthStateChanged(async (user) => {
 async function loadTeacherStats() {
     try {
         // reuse same logic: fetch results for current user (teacher)
-        const results = await getStudentResults(currentUser.uid, 20); // Last 20 is enough for last 10 calc
+        // reuse same logic: fetch results for current user (teacher)
+        const allResults = await getStudentResults(currentUser.uid, 20); // Last 20 is enough for last 10 calc
+
+        // Filter valid results
+        const results = allResults.filter(r => (r.accuracy || 0) >= 90);
 
         if (results.length > 0) {
             // Calculate Last 10 for Header Stats

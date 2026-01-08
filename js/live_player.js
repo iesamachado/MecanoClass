@@ -79,18 +79,40 @@ function startGame(text) {
             const now = Date.now();
             if (now - lastUpdate > UPDATE_INTERVAL) {
                 lastUpdate = now;
-                updateParticipantProgress(currentPin, currentUser.uid, wpm, progress);
+                updateParticipantProgress(currentPin, currentUser.uid, wpm, progress, accuracy, 'playing');
             }
         },
         onComplete: async (stats) => {
+            // Check Disqualification
+            const isDisqualified = stats.accuracy < 90;
+            const finalStatus = isDisqualified ? 'disqualified' : 'finished';
+
             // Final update (Force)
-            await updateParticipantProgress(currentPin, currentUser.uid, stats.wpm, 100);
+            await updateParticipantProgress(currentPin, currentUser.uid, stats.wpm, 100, stats.accuracy, finalStatus);
 
-            // Save Result to history too?
-            await saveResult(currentUser.uid, stats.wpm, stats.accuracy, 'live', null); // null classId for now
+            if (isDisqualified) {
+                // Show Disqualified Screen
+                const overlay = document.getElementById('resultOverlay');
+                overlay.classList.remove('d-none');
+                overlay.classList.add('d-flex');
 
-            document.getElementById('resultOverlay').classList.remove('d-none');
-            document.getElementById('resultOverlay').classList.add('d-flex');
+                // Customize for disqualification
+                overlay.innerHTML = `
+                    <div class="text-center">
+                        <h1 class="text-danger fw-bold mb-3">❌ Descalificado</h1>
+                        <h3 class="text-light mb-2">Precisión Insuficiente: ${stats.accuracy}%</h3>
+                        <p class="text-dim mb-4">Necesitas al menos 90% para clasificar.</p>
+                        <a href="dashboard_student.html" class="btn btn-outline-light">Salir</a>
+                    </div>
+                `;
+            } else {
+                // Save Result to history
+                // We assume live games are always "valid" if not disqualified, even if mode needs refinement
+                await saveResult(currentUser.uid, stats.wpm, stats.accuracy, 'live', null);
+
+                document.getElementById('resultOverlay').classList.remove('d-none');
+                document.getElementById('resultOverlay').classList.add('d-flex');
+            }
         }
     });
 

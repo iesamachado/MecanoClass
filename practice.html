@@ -144,23 +144,61 @@
         let engine;
         let currentClassId = null;
         let practiceText = ''; // Store text for summary
+        let game = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             // Get classId from URL
             const urlParams = new URLSearchParams(window.location.search);
             currentClassId = urlParams.get('classId');
 
+            // Initialize platform game
+            game = new PlatformGame('platformGameCanvas');
+
+            // Wait for auth to settle, then load content
+            // This is crucial for auto-detecting the class
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    const profile = await getUserProfile(user.uid);
+                    if (profile && profile.photoURL) {
+                        game.setAvatar(profile.photoURL);
+                    }
+
+                    // Auto-detect class if missing (fixes "Practice Now" counting issue)
+                    if (!currentClassId) {
+                        console.log("No Class ID. Attempting auto-detection...");
+                        try {
+                            const classes = await getStudentClasses(user.uid);
+                            if (classes && classes.length > 0) {
+                                currentClassId = classes[0].id;
+                                console.log("Auto-detected Class:", currentClassId);
+                            } else {
+                                console.log("No classes found for student.");
+                            }
+                        } catch (e) {
+                            console.error("Error detecting class:", e);
+                        }
+                    }
+                }
+
+                // Load text and engine
+                await loadAndStartEngine();
+            });
+
+            // ESC to restart
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    location.reload();
+                }
+            });
+        });
+
+        async function loadAndStartEngine() {
             // Fetch random text
             document.getElementById('textDisplay').innerText = currentClassId
                 ? "Cargando texto de la clase..."
                 : "Cargando texto aleatorio...";
 
             let textData;
-            // Note: getPracticeTextForClass returns logic {text, ...} or string? 
-            // In db.js I implemented it to return the OBJECT. getRandomPracticeText returned STRING (Wait, check db.js line 197: return randomDoc.data().text).
-            // getPracticeTextForClass returned `pool[randomIndex]`. Which is an object.
-            // So I need to handle both types or standardize.
-
             try {
                 if (currentClassId) {
                     const result = await getPracticeTextForClass(currentClassId);
@@ -174,19 +212,6 @@
             }
 
             practiceText = textData; // Store for summary
-
-            // Initialize platform game
-            const game = new PlatformGame('platformGameCanvas');
-
-            // Set user avatar if available
-            auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    const profile = await getUserProfile(user.uid);
-                    if (profile && profile.photoURL) {
-                        game.setAvatar(profile.photoURL);
-                    }
-                }
-            });
 
             engine = new TypingEngine(textData, {
                 onComplete: showResults,
@@ -210,14 +235,7 @@
                     game.draw(); // Redraw to update progress bar color
                 }
             });
-
-            // ESC to restart
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    location.reload();
-                }
-            });
-        });
+        }
 
         function startPractice(event) {
             if (event) event.stopPropagation();
