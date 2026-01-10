@@ -11,6 +11,10 @@ service cloud.firestore {
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
     // --- Users Collection ---
     // Public read (for avatars/names), Write own or Admin
     match /users/{userId} {
