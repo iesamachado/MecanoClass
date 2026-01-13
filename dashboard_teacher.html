@@ -60,6 +60,103 @@
         </div>
     </div>
 
+
+    <!-- Live Games Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="glass-panel p-4">
+                <h4 class="text-light mb-4"><i class="bi bi-controller me-2 text-danger"></i>Mis Partidas en Vivo</h4>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 bg-transparent">
+                        <thead>
+                            <tr>
+                                <th class="bg-transparent border-secondary text-dim ps-4">Fecha</th>
+                                <th class="bg-transparent border-secondary text-dim text-center">PIN</th>
+                                <th class="bg-transparent border-secondary text-dim text-center">Estado</th>
+                                <th class="bg-transparent border-secondary text-dim text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveGamesTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-dim">Cargando partidas...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Live Game Results Modal -->
+    <div class="modal fade" id="gameResultsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content glass-panel border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light"><i class="bi bi-trophy me-2 text-warning"></i>Resultados de
+                        Partida</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between mb-3 text-dim">
+                        <span id="gameResultsDate"></span>
+                        <span id="gameResultsPin"></span>
+                    </div>
+
+                    <!-- Podium Section -->
+                    <div id="gameResultsPodium" class="d-flex justify-content-center align-items-end gap-4 mb-5 d-none">
+                        <!-- Silver -->
+                        <div class="text-center order-2">
+                            <img id="resSilverAvatar" src=""
+                                class="rounded-circle mb-2 border border-2 border-secondary"
+                                style="width: 60px; height: 60px; object-fit: cover;">
+                            <div class="bg-secondary text-white p-2 rounded-top" style="height: 80px; width: 60px;">
+                                <div class="fw-bold fs-4">2</div>
+                            </div>
+                            <div class="text-dim small text-truncate" style="max-width: 80px;" id="resSilverName"></div>
+                            <div class="text-white fw-bold small" id="resSilverWpm"></div>
+                        </div>
+                        <!-- Gold -->
+                        <div class="text-center order-1">
+                            <img id="resGoldAvatar" src="" class="rounded-circle mb-2 border border-2 border-warning"
+                                style="width: 80px; height: 80px; object-fit: cover;">
+                            <div class="bg-warning text-dark p-2 rounded-top" style="height: 120px; width: 80px;">
+                                <div class="fw-bold fs-2">1</div>
+                            </div>
+                            <div class="text-dim small text-truncate" style="max-width: 100px;" id="resGoldName"></div>
+                            <div class="text-warning fw-bold small" id="resGoldWpm"></div>
+                        </div>
+                        <!-- Bronze -->
+                        <div class="text-center order-3">
+                            <img id="resBronzeAvatar" src="" class="rounded-circle mb-2 border border-2 border-danger"
+                                style="width: 50px; height: 50px; object-fit: cover;">
+                            <div class="bg-danger text-white p-2 rounded-top" style="height: 60px; width: 50px;">
+                                <div class="fw-bold fs-5">3</div>
+                            </div>
+                            <div class="text-dim small text-truncate" style="max-width: 70px;" id="resBronzeName"></div>
+                            <div class="text-white fw-bold small" id="resBronzeWpm"></div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 bg-transparent">
+                            <thead>
+                                <tr>
+                                    <th class="bg-transparent border-secondary text-dim text-center">#</th>
+                                    <th class="bg-transparent border-secondary text-dim">Alumno</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">PPM</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">Precisión</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gameResultsBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Teacher's Practice History -->
     <div class="row mt-5">
         <div class="col-12">

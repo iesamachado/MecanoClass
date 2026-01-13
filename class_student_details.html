@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Alumno - MecanoClass</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="app-header"></div>
+
+    <div class="container py-5 flex-grow-1">
+        <!-- Breadcrumb / Back Navigation -->
+        <div class="mb-4">
+            <a href="#" id="backLink" class="text-decoration-none text-info">
+                <i class="bi bi-arrow-left me-2"></i>Volver a la Clase
+            </a>
+        </div>
+
+        <!-- Student Header Profile -->
+        <div class="glass-panel p-4 mb-4">
+            <div class="d-flex align-items-center gap-4">
+                <img id="studentAvatar" src="" class="rounded-circle border border-2 border-primary"
+                    style="width: 100px; height: 100px; object-fit: cover;">
+                <div>
+                    <h2 class="text-light fw-bold mb-1" id="studentName">Cargando...</h2>
+                    <p class="text-dim mb-2" id="studentEmail">...</p>
+                    <div class="d-flex gap-3">
+                        <span class="badge bg-dark bg-opacity-50 border border-secondary text-light px-3 py-2">
+                            <i class="bi bi-speedometer2 me-2 text-primary"></i><span id="headerAvgWpm">--</span> PPM
+                        </span>
+                        <span class="badge bg-dark bg-opacity-50 border border-secondary text-light px-3 py-2">
+                            <i class="bi bi-bullseye me-2 text-info"></i><span id="headerAvgAcc">--</span>% Precisión
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Assignments & Grades -->
+            <div class="col-lg-6">
+                <!-- Assignments -->
+                <div class="glass-panel p-4 mb-4">
+                    <h4 class="text-light mb-4"><i class="bi bi-clipboard-check me-2 text-success"></i>Tareas y Notas
+                    </h4>
+                    <div class="overflow-auto" style="max-height: 400px;">
+                        <table class="table table-dark table-hover mb-0 bg-transparent">
+                            <thead>
+                                <tr>
+                                    <th class="bg-transparent border-secondary text-dim ps-3">Tarea</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">Progreso</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">Nota</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignmentsBody">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-dim">Cargando tareas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Live Games Participation -->
+                <div class="glass-panel p-4">
+                    <h4 class="text-light mb-4"><i class="bi bi-joystick me-2 text-warning"></i>Partidas en Vivo</h4>
+                    <div class="overflow-auto" style="max-height: 400px;">
+                        <table class="table table-dark table-hover mb-0 bg-transparent">
+                            <thead>
+                                <tr>
+                                    <th class="bg-transparent border-secondary text-dim ps-3">Fecha</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">Posición</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">PPM</th>
+                                </tr>
+                            </thead>
+                            <tbody id="liveGamesBody">
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-dim">Cargando partidas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Exercise History -->
+            <div class="col-lg-6">
+                <div class="glass-panel p-4 h-100">
+                    <h4 class="text-light mb-4"><i class="bi bi-clock-history me-2 text-info"></i>Historial de
+                        Ejercicios</h4>
+                    <div class="overflow-auto" style="max-height: 800px;">
+                        <table class="table table-dark table-hover mb-0 bg-transparent">
+                            <thead>
+                                <tr>
+                                    <th class="bg-transparent border-secondary text-dim ps-3">Fecha</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">PPM</th>
+                                    <th class="bg-transparent border-secondary text-dim text-center">Precisión</th>
+                                    <th class="bg-transparent border-secondary text-dim text-end pe-3">Modo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyBody">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-dim">Cargando historial...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-footer"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/class_student_details.js"></script>
+
+</body>
+
+</html>

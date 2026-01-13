@@ -27,7 +27,7 @@ auth.onAuthStateChanged(async (user) => {
         // Redirect based on role if not already on the correct page
         const currentPage = window.location.pathname;
 
-        if (profile.role === 'teacher' && !currentPage.includes('dashboard_teacher.html') && !currentPage.includes('dashboard_class_details.html') && !currentPage.includes('live_host.html') && !currentPage.includes('practice.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html') && !currentPage.includes('admin.html') && !currentPage.includes('admin_setup.html')) {
+        if (profile.role === 'teacher' && !currentPage.includes('dashboard_teacher.html') && !currentPage.includes('dashboard_class_details.html') && !currentPage.includes('live_host.html') && !currentPage.includes('practice.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html') && !currentPage.includes('admin.html') && !currentPage.includes('admin_setup.html') && !currentPage.includes('class_student_details.html')) {
             window.location.href = 'dashboard_teacher.html';
         } else if (profile.role === 'student' && !currentPage.includes('dashboard_student.html') && !currentPage.includes('practice.html') && !currentPage.includes('live_player.html') && !currentPage.includes('profile.html') && !currentPage.includes('about.html') && !currentPage.includes('privacy.html') && !currentPage.includes('admin.html') && !currentPage.includes('admin_setup.html')) {
             window.location.href = 'dashboard_student.html';

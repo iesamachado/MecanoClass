@@ -442,7 +442,7 @@ async function loadAnalyticsAndActivity() {
         } else {
             rankingData.forEach((stat, index) => {
                 const tr = `
-                <tr>
+                <tr onclick="window.location.href='class_student_details.html?classId=${currentClassId}&studentId=${stat.student.uid}'" style="cursor: pointer;">
                     <td class="bg-transparent border-secondary text-dim ps-4 fw-bold">#${index + 1}</td>
                     <td class="bg-transparent border-secondary text-light">
                         <div class="d-flex align-items-center">

@@ -21,6 +21,7 @@ auth.onAuthStateChanged(async (user) => {
         loadClasses();
         loadTeacherStats();
         loadTeacherHistory();
+        loadTeacherLiveGames();
     } else {
         window.location.href = 'index.html';
     }
@@ -159,5 +160,179 @@ async function loadTeacherHistory() {
     } catch (e) {
         console.error("Error loading teacher history", e);
         tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Error al cargar historial.</td></tr>';
+    }
+}
+
+async function loadTeacherLiveGames() {
+    const tbody = document.getElementById('liveGamesTableBody');
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-dim">Cargando partidas...</td></tr>';
+
+    try {
+        const snapshot = await db.collection('live_sessions')
+            .where('hostId', '==', currentUser.uid)
+            .get();
+
+        const sessions = snapshot.docs.map(doc => doc.data())
+            .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        tbody.innerHTML = '';
+        if (sessions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-dim">No has creado partidas en vivo.</td></tr>';
+            return;
+        }
+
+        sessions.forEach(s => {
+            const date = s.createdAt ? s.createdAt.toDate().toLocaleString() : 'Reciente';
+            const statusClass = s.status === 'running' ? 'text-success' : 'text-secondary';
+            const statusLabel = s.status === 'running' ? 'En Curso' : (s.status === 'finished' ? 'Finalizada' : 'Lobby');
+
+            const tr = `
+                <tr>
+                    <td class="bg-transparent border-secondary text-light ps-4">${date}</td>
+                    <td class="bg-transparent border-secondary text-primary text-center fw-bold font-monospace">${s.pin}</td>
+                    <td class="bg-transparent border-secondary text-center ${statusClass}">${statusLabel}</td>
+                    <td class="bg-transparent border-secondary text-end pe-4">
+                        <button class="btn btn-sm btn-outline-info" onclick="viewGameResults('${s.pin}', '${date}')">
+                            <i class="bi bi-list-ol me-1"></i>Ver Resultados
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', tr);
+        });
+
+    } catch (e) {
+        console.error("Error loading live games:", e);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error al cargar partidas.</td></tr>';
+    }
+}
+
+async function viewGameResults(pin, dateStr) {
+    const modal = new bootstrap.Modal(document.getElementById('gameResultsModal'));
+    document.getElementById('gameResultsDate').innerText = dateStr;
+    document.getElementById('gameResultsPin').innerText = 'PIN: ' + pin;
+
+    const tbody = document.getElementById('gameResultsBody');
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-dim">Cargando resultados...</td></tr>';
+
+    modal.show();
+
+    try {
+        const snapshot = await db.collection('live_participants')
+            .where('sessionId', '==', pin)
+            .get();
+
+        const participants = snapshot.docs.map(doc => doc.data());
+
+        // Enrich with user profiles (fetch all needed)
+        // Optimization: Use Promise.all
+        const enriched = await Promise.all(participants.map(async p => {
+            const userProfile = await getUserProfile(p.studentId);
+            return { ...p, name: userProfile ? userProfile.displayName : 'Desconocido', avatar: userProfile ? userProfile.photoURL : '' };
+        }));
+
+        // Split valid and invalid
+        const validParticipants = enriched.filter(p => (p.accuracy || 0) >= 90);
+        const invalidParticipants = enriched.filter(p => (p.accuracy || 0) < 90);
+
+        // Sort Both by WPM Desc
+        validParticipants.sort((a, b) => (b.wpm || 0) - (a.wpm || 0));
+        invalidParticipants.sort((a, b) => (b.wpm || 0) - (a.wpm || 0));
+
+        // Podium Logic (Only Valid)
+        const podiumDiv = document.getElementById('gameResultsPodium');
+        if (validParticipants.length > 0) {
+            podiumDiv.classList.remove('d-none');
+
+            // Gold
+            const gold = validParticipants[0];
+            const goldEl = document.getElementById('resGoldAvatar').parentElement;
+            if (gold) {
+                document.getElementById('resGoldAvatar').src = gold.avatar || 'img/default-avatar.png';
+                document.getElementById('resGoldName').innerText = gold.name;
+                document.getElementById('resGoldWpm').innerText = (gold.wpm || 0) + ' PPM';
+                goldEl.style.visibility = 'visible';
+            } else {
+                goldEl.style.visibility = 'hidden';
+            }
+
+            // Silver
+            const silver = validParticipants[1];
+            const silverEl = document.getElementById('resSilverAvatar').parentElement;
+            if (silver) {
+                document.getElementById('resSilverAvatar').src = silver.avatar || 'img/default-avatar.png';
+                document.getElementById('resSilverName').innerText = silver.name;
+                document.getElementById('resSilverWpm').innerText = (silver.wpm || 0) + ' PPM';
+                silverEl.style.visibility = 'visible';
+            } else {
+                silverEl.style.visibility = 'hidden';
+            }
+
+            // Bronze
+            const bronze = validParticipants[2];
+            const bronzeEl = document.getElementById('resBronzeAvatar').parentElement;
+            if (bronze) {
+                document.getElementById('resBronzeAvatar').src = bronze.avatar || 'img/default-avatar.png';
+                document.getElementById('resBronzeName').innerText = bronze.name;
+                document.getElementById('resBronzeWpm').innerText = (bronze.wpm || 0) + ' PPM';
+                bronzeEl.style.visibility = 'visible';
+            } else {
+                bronzeEl.style.visibility = 'hidden';
+            }
+
+        } else {
+            podiumDiv.classList.add('d-none');
+        }
+
+        // Render Table (Valid + Invalid)
+        tbody.innerHTML = '';
+        if (validParticipants.length === 0 && invalidParticipants.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-dim">No hay participantes.</td></tr>';
+        } else {
+            // 1. Render Valid
+            validParticipants.forEach((p, index) => {
+                let rankClass = 'text-dim';
+                if (index === 0) rankClass = 'text-warning fw-bold';
+                if (index === 1) rankClass = 'text-secondary fw-bold';
+                if (index === 2) rankClass = 'text-danger fw-bold';
+
+                const tr = `
+                    <tr>
+                        <td class="bg-transparent border-secondary text-center ${rankClass}">#${index + 1}</td>
+                        <td class="bg-transparent border-secondary text-light">
+                            <div class="d-flex align-items-center">
+                                <img src="${p.avatar || 'img/default-avatar.png'}" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
+                                ${p.name}
+                            </div>
+                        </td>
+                        <td class="bg-transparent border-secondary text-primary text-center fw-bold">${p.wpm || 0}</td>
+                        <td class="bg-transparent border-secondary text-info text-center">${p.accuracy || 0}%</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+
+            // 2. Render Invalid
+            invalidParticipants.forEach((p) => {
+                const tr = `
+                    <tr>
+                        <td class="bg-transparent border-secondary text-center text-danger fw-bold">DQ</td>
+                        <td class="bg-transparent border-secondary text-dim opacity-75">
+                            <div class="d-flex align-items-center">
+                                <img src="${p.avatar || 'img/default-avatar.png'}" class="rounded-circle me-2 grayscale" style="width: 24px; height: 24px; object-fit: cover; filter: grayscale(100%);">
+                                ${p.name}
+                            </div>
+                        </td>
+                        <td class="bg-transparent border-secondary text-dim text-center opacity-75">${p.wpm || 0}</td>
+                        <td class="bg-transparent border-secondary text-danger text-center fw-bold">${p.accuracy || 0}%</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+        }
+
+    } catch (e) {
+        console.error("Error loading game details:", e);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error al cargar detalles.</td></tr>';
     }
 }
