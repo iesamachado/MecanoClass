@@ -18,6 +18,16 @@ auth.onAuthStateChanged(async (user) => {
             alert("Error de perfil. Relogueando...");
             window.location.href = 'index.html';
         }
+
+        // Check for PIN in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const pinParam = urlParams.get('pin');
+        if (pinParam) {
+            document.getElementById('gamePinInput').value = pinParam;
+            // Optional: Auto-join? checking if user wants that. 
+            // Better to let them click join to confirm account.
+        }
+
     } else {
         window.location.href = 'index.html';
     }

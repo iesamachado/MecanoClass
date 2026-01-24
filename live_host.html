@@ -10,11 +10,12 @@
     <link href="css/styles.css" rel="stylesheet">
     <style>
         .racer-lane {
-            position: relative;
+            position: absolute;
             height: 60px;
+            width: 100%;
+            left: 0;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 30px;
-            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             padding: 0 10px;
@@ -64,7 +65,13 @@
                 <span class="text-dim small text-uppercase">PIN DE PARTIDA</span>
                 <h1 class="text-white fw-bold m-0" id="gamePin">...</h1>
             </div>
-            <button class="btn btn-outline-danger" onclick="exitGame()">Salir</button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-light" onclick="joinAsPlayer()"
+                    title="Unirte como jugador en otra pestaña">
+                    <i class="bi bi-person-plus-fill me-2"></i>Participar
+                </button>
+                <button class="btn btn-outline-danger" onclick="exitGame()">Salir</button>
+            </div>
         </div>
 
         <!-- Lobby View -->
@@ -79,7 +86,7 @@
 
         <!-- Race View -->
         <div id="raceView" class="flex-grow-1 p-5 d-none overflow-auto">
-            <div id="raceTracks">
+            <div id="raceTracks" style="position: relative; min-height: 500px;">
                 <!-- Tracks will be generated here -->
             </div>
         </div>
@@ -119,6 +126,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
+    <script src="js/initial_texts.js"></script>
     <script src="js/db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/live_host.js"></script>

@@ -2,7 +2,8 @@
 
 let gamePin = null;
 let participants = [];
-const gameText = "La velocidad es importante pero la precision es fundamental para ganar esta carrera.";
+// const gameText = "La velocidad es importante pero la precision es fundamental para ganar esta carrera.";
+let gameText = "Texto de carrera cargando...";
 
 auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -15,6 +16,16 @@ auth.onAuthStateChanged(async (user) => {
 
 async function initGame(hostId) {
     try {
+        // Select random text from library if available
+        if (typeof initialTexts !== 'undefined' && initialTexts.length > 0) {
+            const randomIdx = Math.floor(Math.random() * initialTexts.length);
+            gameText = initialTexts[randomIdx].text;
+            // Optional: Store title/category for display?
+            // console.log("Selected Text:", initialTexts[randomIdx].category);
+        } else {
+            gameText = "La velocidad es importante pero la precision es fundamental para ganar esta carrera.";
+        }
+
         gamePin = await createLiveSession(hostId, gameText);
         document.getElementById('gamePin').innerText = gamePin;
 
@@ -72,26 +83,35 @@ function startGame() {
 
 let playerProfilesCache = {};
 
+const LANE_HEIGHT = 60;
+const LANE_GAP = 16;
+
 async function initRaceTracks() {
     const tracksContainer = document.getElementById('raceTracks');
     tracksContainer.innerHTML = '';
 
-    for (const p of participants) {
+    // Set container height based on participants
+    const totalHeight = participants.length * (LANE_HEIGHT + LANE_GAP);
+    tracksContainer.style.height = `${totalHeight}px`;
+
+    participants.forEach(async (p, index) => {
         let profile = playerProfilesCache[p.studentId];
         if (!profile) {
             profile = await getUserProfile(p.studentId);
             playerProfilesCache[p.studentId] = profile;
         }
 
+        const initialTop = index * (LANE_HEIGHT + LANE_GAP);
+
         const trackHtml = `
-            <div class="racer-lane" id="lane-${p.studentId}">
+            <div class="racer-lane" id="lane-${p.studentId}" style="top: ${initialTop}px;">
                 <div class="racer-name text-truncate" style="max-width: 100px;">${profile.displayName}</div>
                 <div class="racer-track"></div>
                 <img src="${profile.photoURL}" class="racer-avatar" style="left: 0%;">
             </div>
         `;
         tracksContainer.insertAdjacentHTML('beforeend', trackHtml);
-    }
+    });
 }
 
 function updateRaceTracks(currentParticipants) {
@@ -103,17 +123,42 @@ function updateRaceTracks(currentParticipants) {
         // Assuming database handles updates fast enough for visual demo.
     }
 
-    currentParticipants.forEach(p => {
+    // Sort participants for visualization
+    // 1. Qualified vs Disqualified
+    // 2. Progress Desc
+    // 3. WPM Desc (Tie breaker)
+    const sortedParticipants = [...currentParticipants].sort((a, b) => {
+        const aDisq = a.status === 'disqualified';
+        const bDisq = b.status === 'disqualified';
+
+        if (aDisq && !bDisq) return 1; // a goes to bottom
+        if (!aDisq && bDisq) return -1; // b goes to bottom
+
+        // Both qualified or both disqualified: Sort by Progress
+        if (b.progress !== a.progress) {
+            return b.progress - a.progress;
+        }
+
+        // Tie breaker: WPM
+        return (b.wpm || 0) - (a.wpm || 0);
+    });
+
+    // Update positions
+    sortedParticipants.forEach((p, index) => {
         const lane = document.getElementById(`lane-${p.studentId}`);
         if (lane) {
+            // Update Avatar Position (Movement)
             const avatar = lane.querySelector('.racer-avatar');
-            avatar.style.left = `calc(${p.progress}% - 25px)`; // -25px is half avatar width
+            avatar.style.left = `calc(${p.progress}% - 25px)`;
+
+            // Update Lane Vertical Position (Ranking)
+            const newTop = index * (LANE_HEIGHT + LANE_GAP);
+            lane.style.top = `${newTop}px`;
 
             // Visual feedback for disqualification
             if (p.status === 'disqualified') {
                 avatar.style.border = '2px solid red';
                 avatar.style.opacity = '0.7';
-                // Optional: Add an icon or change lane color?
                 lane.style.background = 'rgba(248, 113, 113, 0.1)';
             }
         }
@@ -158,4 +203,9 @@ function exitGame() {
         // endLiveSession(gamePin);
         window.location.href = 'dashboard_teacher.html';
     }
+}
+
+function joinAsPlayer() {
+    if (!gamePin) return alert("Espera a que se genere el PIN.");
+    window.open(`live_player.html?pin=${gamePin}`, '_blank');
 }
